@@ -6,15 +6,12 @@ from google.oauth2 import service_account
 import json
 import time
 
-st.set_page_config(page_title="Movies Dashboard", page_icon="🎬", layout="wide")
+st.set_page_config(page_title="Dashboard de Peliculas", page_icon="🎬", layout="wide")
 
-# ---- Autenticación via Secrets (Streamlit Cloud) ----
-# En Settings > Secrets define:
-# textkey = """
-# { ... TU JSON COMPLETO DE SERVICE ACCOUNT ... }
-# """
+# ---- Autenticación via Secrets de streamlit cloud) ----
+
 key_dict = json.loads(st.secrets["textkey"])
-project_id = key_dict["project_id"]  # <-- Toma el proyecto correcto del JSON
+project_id = key_dict["project_id"]  
 creds = service_account.Credentials.from_service_account_info(key_dict)
 db = firestore.Client(credentials=creds, project=project_id)
 
@@ -30,6 +27,7 @@ with st.sidebar:
     except Exception as e:
         st.error(f"Fallo conexión Firestore: {e}")
 
+
 # ---- Carga de datos con cache y límite opcional ----
 @st.cache_data(ttl=300)  # refresca cada 5 minutos
 def load_movies(limit=None):
@@ -41,20 +39,21 @@ def load_movies(limit=None):
             docs = ref.stream()
         data = [doc.to_dict() for doc in docs]
         df = pd.DataFrame(data)
-        # Normaliza columnas esperadas
+
+        # nmormaliza columnas esperadas
         for col in ["title", "year", "director", "genre"]:
             if col not in df.columns:
                 df[col] = pd.NA
         return df
     except Exception as e:
-        # Muestra error en UI pero devuelve DF vacío para que el app no se caiga
+        # muestra error en UI pero devuelve df vacío para que el app no se caiga
         st.error(f"Error al leer de Firestore: {e}")
         return pd.DataFrame(columns=["title", "year", "director", "genre"])
 
-# Carga inicial (usa límite si tu colección es muy grande)
+# Carga inicial (usar si límite si la colección es muy grande)
 movies_df = load_movies(limit=None)
 
-st.title("🎬 Movies Dashboard")
+st.title("🎬 Dashboard de Peliculas")
 
 # ---- Mostrar todos (opcional) ----
 with st.sidebar:
